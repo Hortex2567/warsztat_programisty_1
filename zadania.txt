@@ -88,5 +88,5 @@ cat genom.txt | egrep -v "^#" | awk 'BEGIN {max=-1; min=999999999999} {d=$6-$5; 
 19- Zmień format pliku, tak aby zawierał dwa pola:  RefSeq<tab>chr:start-end
 	ex: NM_001039886	chr19:57722720-57751115
 
-cat genom.txt | egrep -v "^#" | awk '{print $2 "\t" $3 ":" $5 ":" $6}' > new_genom.txt
+cat genom.txt | egrep -v "^#" | awk '{print $2 "\t" $3 ":" $5 "-" $6}' > new_genom.txt
 
