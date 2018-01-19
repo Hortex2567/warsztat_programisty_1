@@ -1,92 +1,70 @@
 Rozpakuj katalog archiwum.tar.gz
-
-tar -xvvzf archiwum.tar.gz
+tar -xzf archiwum.tar.gz 
 
 Sprawdź sumę kontrolną pliku genom.txt
-
-md5sum -c suma.md5
+ md5sum -c suma.md5 
 
 =======================================
 Zadanie 1
 =======================================
 1. Plik zawiera współrzędne ludzkiego genomu w transkrypcji RefSeq. Kolejne kolumny oznaczają
-chrom	strand	txStart	txEnd	cdsStart	cdsEnd	exonCount	exonStarts	exonEnds	proteinID	alignID
+#bin	chrom	strand	txStart	txEnd	cdsStart	cdsEnd	exonCount	exonStarts	exonEnds	proteinID	alignID
 	
-4. - Spójrz na plik  
+4. - Spójrz na plik
 	-Ile jest pól? 
+	head -2 genom.txt | grep -v "^#" | awk '{print NF}'
 
-head -2 genom.txt | tail -1 | awk '{print NF}'
-	
-	-Ile to jestlinii?  
+	-Ile to jest linii?  
+	cat genom.txt| wc -l
 
-wc -l genom.txt
+5 - W jaki sposób są rozdzielone pola?
+Bialymi znakami
 
-
-5 - W jaki sposób są rozdzielone pola? 
-
-białymi znakami (po oglądnięciu head -10 genom.txt) 
-
-6 - Ile transkryptów (NM_*) jest reprezentowanych w pliku? 
-
-awk '/NM_.*/ {c += 1} END {print c}' genom.txt
+6 - Ile transkryptów (NM_ *) jest reprezentowanych w pliku? 
+cat genom.txt | grep -v "^#" | cut -f2 | wc -l
 
 7 -Ile genów jest reprezentowanych w pliku? 
-
-cat genom.txt | cut -f2 | cat | egrep ^NM_\d* | uniq | wc -l
+cat genom.txt | grep -v "^#" | cut -f2| sort | uniq | wc -l
 
 8 - Czy jakiekolwiek transkrypty są reprezentowane więcej niż jeden raz?   
     Jeśli tak, które [Umieść listę w pliku "mult_transcripts.txt"]?
-
-cat genom.txt | cut -f2 | cat | egrep ^NM_\d* | sort | uniq > unique.txt
-cat genom.txt | cut -f2 | cat | egrep ^NM_\d* | sort  > all.txt
-diff all.txt unique.txt | egrep "^< " | cut -d' ' -f2 > mult_transcripts.txt
+cat genom.txt | grep -v "^#" | cut -f2| sort | uniq > uniq.txt
+cat genom.txt | grep -v "^#" | cut -f2| sort > notUniq.txt
+diff notUniq.txt uniq.txt | grep "^< " | cut -d' ' -f2 > mult_transcripts.txt
 
 9  -Ile chromosomów jest reprezentowanych? 
-
-cat genom.txt | cut -f3 | uniq | wc -l
+cat genom.txt | grep "chr" | cut -f3 | sort | uniq | wc -l
 
 10 - Jakie geny znajdują się na chromosomie Y? Umieść je w pliku "chrY_genes.txt"
-
-cat genom.txt | grep "\schrY\s" | cut -f2 | uniq > chrY_genes.txt	
-
+cat genom.txt | grep "chrY" | cut -f2 | sort | uniq > chrY_genes.txt 
+	
 11 -Utwórz osobne pliki dla genów "+" i "-", o nazwach "genom_plus.txt" i "genom_neg.txt"
-
-awk '{if ($4 == "-") print}' genom.txt > genom_neg.txt
-awk '{if ($4 == "+") print}' genom.txt > genom_plus.txt
+cat genom.txt | grep "\s+\s" | sort | uniq > genom_plus.txt
+cat genom.txt | grep "\s-\s" | sort | uniq > genom_neg.txt
 
 12- Posortuj wszystkie dane w genom_plus.txt, najpierw przez chromosom (rosnąco), a następnie przez pierwszą współrzędną (malejąco).
-
-cat genom_plus.txt | sort -k3 --version-sort | sort -rk5 > sorted_genom_plus.txt
+cat genom_plus.txt | sort -rk 3 -k 1  > genom_plus_sort.txt
 
 13- Podziel równomiernie wszystkie dane na 4 pliki o nazwach "Part_1.txt", "Part_2.txt" itd. Użyj komendy split.
-
 split -n4 -a1 --numeric-suffixes=1 genom.txt Part_
 
-14- Jakie 5 genów pojawia się na "prawym końcu" (np. Mają najwyższe współrzędne) chr 19?
-    (dla chromosomu 10, ponieważ dane nie zawierają chromosomu 19)
-
-cat genom.txt | egrep "\schr10\s" | sort -k5 | cut -f2 | tail -5 # po txStart
+14- Jakie 5 genów pojawia się na "prawym końcu" (np. Mają najwyższe współrzędne) chr 14?
+cat genom.txt | egrep "\schr10\s" | sort -rk5 | cut -f2 | head -5
 
 15- W oparciu o pole z genami, jaki jest najdłuższy chromosom? Jaka jest jego długość?
-
-awk 'BEGIN {max=-1} {if ($6-$5 > max) max=$6-$5}END{print max}' genom.txt
+awk 'BEGIN {max = 0} {if ($6 - $5 > max) max = $6 - $5} END {print max}' genom.txt
 
 16- Jakie geny zawierają litery "BMP"? Umieść je w pliku "BMPs_etc.txt"
-
 awk '{if ($13 ~ "BMP") print}' genom.txt > BMPs_etc.txt	
 
 17- Które z tych "genów BMP" mają więcej niż jeden transkrypt?
-
-cat BMPs_etc.txt | wc -l # daje 23
-cat BMPs_etc.txt | cut -f2 | sort | uniq | wc -l # daje 23
-# ponieważ obie liczby są równe, żadne się nie powtarzają
+Zaden
+cat BMPs_etc.txt | wc -l
+cat BMPs_etc.txt | cut -f2 | sort | uniq | wc -l
 
 18- Jaki gen ma najdłuższą długość genomu (odległość między początkiem i końcem transkrypcji)? Najkrótszy?
-
-cat genom.txt | egrep -v "^#" | awk 'BEGIN {max=-1; min=999999999999} {d=$6-$5; if (d > max) max=d; if (d < min) min = d}END{print "Max: " max " Min: " min}'
+cat genom.txt | egrep -v "^#" | awk 'BEGIN {max = 0; min = 999999999999} {d = $6 - $5; if (d > max) max = d; if (d < min) min = d} END {print "Max=" max " Min=" min}'
 
 19- Zmień format pliku, tak aby zawierał dwa pola:  RefSeq<tab>chr:start-end
 	ex: NM_001039886	chr19:57722720-57751115
-
-cat genom.txt | egrep -v "^#" | awk '{print $2 "\t" $3 ":" $5 "-" $6}' > new_genom.txt
-
+cat genom.txt | egrep -v "^#" | awk '{print "ex:" $2 "\t" $3 ":" $5 "-" $6}' > genom_zmieniony.txt
